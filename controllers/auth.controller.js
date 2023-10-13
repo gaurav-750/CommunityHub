@@ -3,6 +3,8 @@ const bcryptjs = require("bcryptjs");
 const { Snowflake } = require("@theinternetfolks/snowflake");
 const { generateToken } = require("../configs/jwt.config");
 
+const Validator = require("validatorjs");
+
 module.exports.createUser = async (req, res) => {
   console.log("[Auth: Signup] received request body: ", req.body);
 
@@ -24,32 +26,35 @@ module.exports.createUser = async (req, res) => {
       });
     }
 
-    //validating input & password
-    let errors = [];
-    if (name.length < 2) {
-      errors.push({
-        param: "name",
-        message: "Name should be at least 2 characters.",
-        code: "INVALID_INPUT",
-      });
-    }
+    //! Validation using validatorJS
+    const rules = {
+      name: "required|min:2",
+      email: "required|email",
+      password: "required|min:2",
+    };
 
-    if (password.length < 2) {
-      errors.push({
-        param: "password",
-        message: "Password should be at least 2 characters.",
-        code: "INVALID_INPUT",
-      });
-    }
+    const validation = new Validator(req.body, rules);
 
-    //if there are any validation errors
-    if (errors.length > 0) {
-      return res.json({
+    if (validation.fails()) {
+      const errorResponse = {
         status: false,
-        errors,
-      });
+        errors: [],
+      };
+      const errorObj = validation.errors.all();
+      console.log("errorObj!!", errorObj);
+
+      for (let param in errorObj) {
+        errorResponse.errors.push({
+          param: param,
+          message: errorObj[param][0], // Taking the first error message
+          code: "INVALID_INPUT",
+        });
+      }
+
+      return res.status(400).json(errorResponse);
     }
 
+    //if no errors:
     const hashPassword = await bcryptjs.hash(password, 10);
     console.log("[Auth: Signup] hashed password: " + hashPassword);
 
@@ -92,4 +97,9 @@ module.exports.createUser = async (req, res) => {
   }
 };
 
-module.exports.login = async (req, res) => {};
+module.exports.login = async (req, res) => {
+  console.log("[Auth: Login] received request body: ", req.body);
+
+  try {
+  } catch (error) {}
+};
