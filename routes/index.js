@@ -8,7 +8,7 @@ const memberRouter = require("./member.router");
 const router = express.Router();
 
 router.use("/auth", authRouter);
-// router.use("/role", roleRouter);
+router.use("/role", roleRouter);
 // router.use("/community", communityRouter);
 // router.use("/member", memberRouter);
 
