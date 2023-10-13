@@ -22,7 +22,7 @@ const communitySchema = new Schema(
     },
 
     owner: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "User", // Refers to the User model
       required: true,
     },

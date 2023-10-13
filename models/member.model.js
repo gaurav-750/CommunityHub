@@ -8,19 +8,19 @@ const memberSchema = new mongoose.Schema(
       unique: true,
     },
     community: {
-      type: mongoose.Schema.Types.ObjectId, // Assuming ObjectId for the community model
+      type: String, //will be snowflake id
       ref: "Community", // Refers to the Community model
       required: true,
     },
 
     user: {
-      type: mongoose.Schema.Types.ObjectId, // Assuming ObjectId for the user model
+      type: String, //will be snowflake id
       ref: "User", // Refers to the User model
       required: true,
     },
 
     role: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String, //will be snowflake id
       ref: "Role",
       required: true,
     },
