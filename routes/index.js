@@ -9,7 +9,7 @@ const router = express.Router();
 
 router.use("/auth", authRouter);
 router.use("/role", roleRouter);
-// router.use("/community", communityRouter);
+router.use("/community", communityRouter);
 // router.use("/member", memberRouter);
 
 module.exports = router;
