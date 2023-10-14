@@ -99,33 +99,16 @@ const getAllCommunities = async (req, res) => {
     const communities = await Community.find()
       .skip(skip)
       .limit(limit)
-      // .populate({
-      //   path: "owner",
-      //   select: "id name",
-      //   model: User,
-      // })
+      .populate({
+        path: "owner",
+        select: "-_id id name",
+        model: User,
+        localField: "owner",
+        foreignField: "id",
+      })
       .select("-_id -__v")
       .lean()
       .sort({ createdAt: -1 });
-
-    //! populating the owner field
-    const userIds = communities.map((community) => community.owner);
-
-    const users = await User.find({ id: { $in: userIds } }).select(
-      "-_id id name"
-    );
-
-    // Now map the users back to the communities
-    const populatedCommunities = communities.map((community) => {
-      const ownerData = users.find((user) => user.id === community.owner);
-      return {
-        ...community,
-        owner: {
-          id: ownerData.id,
-          name: ownerData.name,
-        },
-      };
-    });
 
     //* return the final response - all communities
     const response = {
@@ -138,7 +121,7 @@ const getAllCommunities = async (req, res) => {
         },
       },
 
-      data: populatedCommunities,
+      data: communities,
     };
 
     return res.status(200).json(response);
@@ -147,7 +130,62 @@ const getAllCommunities = async (req, res) => {
   }
 };
 
-const getMembersOfACommunity = async (req, res) => {};
+const getMembersOfACommunity = async (req, res) => {
+  const communityId = req.params.id;
+  console.log("communityId:", communityId);
+
+  const page = parseInt(req.query.page) || 1;
+  const limit = 10;
+  const skip = (page - 1) * limit;
+
+  try {
+    const totalMembers = await Member.countDocuments({
+      community: communityId,
+    });
+
+    const totalPages = Math.ceil(totalMembers / limit);
+
+    const members = await Member.find({ community: communityId })
+      .skip(skip)
+      .limit(limit)
+      .populate([
+        {
+          path: "user",
+          select: "-_id id name",
+          model: User,
+          localField: "user",
+          foreignField: "id",
+        },
+        {
+          path: "role",
+          select: "-_id id name",
+          model: Role,
+          localField: "role",
+          foreignField: "id",
+        },
+      ])
+      .select("-_id -__v")
+      .lean();
+    // console.log("Members:", members);
+
+    const response = {
+      status: true,
+      content: {
+        meta: {
+          total: totalMembers,
+          pages: totalPages,
+          page: page,
+        },
+      },
+
+      data: members,
+    };
+
+    return res.json(response);
+  } catch (error) {
+    console.log(error);
+  }
+};
 
 const getMyOwnedCommunities = async (req, res) => {};
 

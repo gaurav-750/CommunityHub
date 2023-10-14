@@ -9,7 +9,7 @@ router.post("/", validateToken, communityController.createCommunity);
 
 router.get("/", communityController.getAllCommunities);
 
-router.get(":id/members", communityController.getMembersOfACommunity);
+router.get("/:id/members", communityController.getMembersOfACommunity);
 
 router.get(
   "/me/owner",
