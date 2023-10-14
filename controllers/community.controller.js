@@ -1,6 +1,7 @@
 const Community = require("../models/community.model");
 const Member = require("../models/member.model");
 const Role = require("../models/role.model");
+const User = require("../models/user.model");
 
 const Validator = require("validatorjs");
 const { Snowflake } = require("@theinternetfolks/snowflake");
@@ -85,7 +86,66 @@ const createCommunity = async (req, res) => {
   }
 };
 
-const getAllCommunities = async (req, res) => {};
+const getAllCommunities = async (req, res) => {
+  const page = req.query.page || 1;
+  const limit = 10;
+
+  try {
+    const totalCommunities = await Community.countDocuments();
+    const totalPages = Math.ceil(totalCommunities / limit);
+
+    const skip = (page - 1) * limit;
+
+    const communities = await Community.find()
+      .skip(skip)
+      .limit(limit)
+      // .populate({
+      //   path: "owner",
+      //   select: "id name",
+      //   model: User,
+      // })
+      .select("-_id -__v")
+      .lean()
+      .sort({ createdAt: -1 });
+
+    //! populating the owner field
+    const userIds = communities.map((community) => community.owner);
+
+    const users = await User.find({ id: { $in: userIds } }).select(
+      "-_id id name"
+    );
+
+    // Now map the users back to the communities
+    const populatedCommunities = communities.map((community) => {
+      const ownerData = users.find((user) => user.id === community.owner);
+      return {
+        ...community,
+        owner: {
+          id: ownerData.id,
+          name: ownerData.name,
+        },
+      };
+    });
+
+    //* return the final response - all communities
+    const response = {
+      status: true,
+      content: {
+        meta: {
+          total: totalCommunities,
+          pages: totalPages,
+          page: page,
+        },
+      },
+
+      data: populatedCommunities,
+    };
+
+    return res.status(200).json(response);
+  } catch (error) {
+    console.log("error in getting all communities: ", error);
+  }
+};
 
 const getMembersOfACommunity = async (req, res) => {};
 

@@ -32,5 +32,13 @@ const communitySchema = new Schema(
   }
 );
 
+//creating a virtual:
+//because I want to populate other than _id
+// communitySchema.virtual("owners", {
+//   ref: "User",
+//   localField: "id",
+//   foreignField: "id",
+// });
+
 const Community = mongoose.model("Community", communitySchema);
 module.exports = Community;
