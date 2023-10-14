@@ -31,5 +31,6 @@ const memberSchema = new mongoose.Schema(
 );
 
 memberSchema.index({ community: 1, user: 1 }, { unique: true });
+
 const Member = mongoose.model("Member", memberSchema);
 module.exports = Member;

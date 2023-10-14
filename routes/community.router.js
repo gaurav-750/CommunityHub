@@ -18,7 +18,7 @@ router.get(
 );
 
 router.get(
-  "me/member",
+  "/me/member",
   validateToken,
   communityController.getMyJoinedCommunities
 );

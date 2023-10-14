@@ -166,7 +166,6 @@ const getMembersOfACommunity = async (req, res) => {
       ])
       .select("-_id -__v")
       .lean();
-    // console.log("Members:", members);
 
     const response = {
       status: true,
@@ -174,7 +173,7 @@ const getMembersOfACommunity = async (req, res) => {
         meta: {
           total: totalMembers,
           pages: totalPages,
-          page: page,
+          page,
         },
       },
 
@@ -187,9 +186,100 @@ const getMembersOfACommunity = async (req, res) => {
   }
 };
 
-const getMyOwnedCommunities = async (req, res) => {};
+const getMyOwnedCommunities = async (req, res) => {
+  console.log(
+    "[Community: Get My Owned Communities] received request body: ",
+    req.body
+  );
+  const ownerId = req.body.userId;
+  const page = parseInt(req.query.page) || 1;
+  const limit = 10;
+  const skip = (page - 1) * limit;
 
-const getMyJoinedCommunities = async (req, res) => {};
+  try {
+    const totalMembers = await Community.countDocuments({ owner: ownerId });
+    const totalPages = Math.ceil(totalMembers / limit);
+
+    const ownedCommunities = await Community.find({ owner: ownerId })
+      .skip(skip)
+      .limit(limit)
+      .select("-_id -__v")
+      .lean();
+
+    const response = {
+      status: true,
+      content: {
+        meta: {
+          total: totalMembers,
+          pages: totalPages,
+          page,
+        },
+      },
+
+      data: ownedCommunities,
+    };
+
+    return res.json(response);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const getMyJoinedCommunities = async (req, res) => {
+  //first get the userId from the request body
+  const userId = req.body.userId;
+
+  const page = parseInt(req.query.page) || 1;
+  const limit = 10;
+  const skip = (page - 1) * limit;
+
+  try {
+    const userMemberships = await Member.find({ user: userId }).select(
+      "-_id -__v"
+    );
+
+    // Extract community IDs from the member entries
+    const communityIds = userMemberships.map(
+      (membership) => membership.community
+    );
+
+    // Count total communities for the user
+    const totalCommunities = await Community.countDocuments({
+      id: { $in: communityIds },
+    });
+    const totalPages = Math.ceil(totalCommunities / limit);
+
+    // Fetch the communities
+    const userCommunities = await Community.find({ id: { $in: communityIds } })
+      .select("-_id -__v")
+      .skip(skip)
+      .limit(limit)
+      .populate({
+        path: "owner",
+        select: "-_id id name",
+        model: User,
+        localField: "owner",
+        foreignField: "id",
+      })
+      .lean();
+
+    const response = {
+      status: true,
+      content: {
+        meta: {
+          total: totalCommunities,
+          pages: totalPages,
+          page,
+        },
+        data: userCommunities,
+      },
+    };
+
+    return res.status(200).json(response);
+  } catch (error) {
+    console.log(error);
+  }
+};
 
 module.exports = {
   createCommunity,
